@@ -1,0 +1,40 @@
+
+
+This is a simple malloc/free implementation.
+When my_malloc() is called, the requested size is rounded up to the next power of 2.
+If there is a block of exactly this size, which has previously been freed, that block is returned.
+If there is no such block, then a new block is allocated on the heap. The allocation involves a sbrk syscall,
+which moves the boundary of the heap, by a given amount.
+
+The advantage of this simple policy is to have a very fast my_alloc().
+This comes at the price of wasted memory, as the allocated blocks may be upto twice as large as requested.
+A further improvement would be, to only follow this policy for small blocks,
+and resort to another policy for large blocks.
+
+
+Example:
+- my_alloc is called with a requested size of 160 bytes
+- The size of the header is added. Assuming the header is 8 bytes long, we have a new size of 168
+- This number is rounded up tho the next power of two, in this case the new size is 256.
+- The log_size is 8, as 2^8 = 256.
+- The mutex at free_list_mutex[8] is acquired, which guards the access of free_list[8]
+- If there is a free block in the list, then this block is removed from the free_list[8] and re-used
+- The mutex at free_list_mutex[8] is released
+- If no block of exactly 256 bytes was found, then sbrk(256) is called, which increases heap size by 256 bytes.
+- The header is written into the first address of the block
+- The first address after the header is returned.
+
+If, later, the block is freed, then:
+- free() determines the size of the block, by reading the header, preceding the block
+- Assume the log_size is 8
+- The mutex at free_list_mutex[8] is acquired, which guards the access of free_list[8]
+- The block is added at the beginning of free_list[8]
+- The mutex at free_list_mutex[8] is released
+
+
+
+
+
+
+
+
